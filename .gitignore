@@ -1,3 +1,8 @@
+# Temp
+.vs
+bin
+tmp
+
 # Prerequisites
 *.d
 
