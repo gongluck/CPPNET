@@ -21,6 +21,12 @@ if(ret != compare)\
               << ", error " << ret;\
 }
 
+typedef struct __NETDATA
+{
+    int type;
+    char info[128];
+}StruNetData;
+
 int main()
 {
     // Initialize the version environment
@@ -38,11 +44,12 @@ int main()
     addr.sin_port = htons(4567);
     ret = connect(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
     CHECKEQUALRET(ret, SOCKET_ERROR);
-    char buf[256] = { 0 };
-    ret = recv(sock, buf, sizeof(buf), 0);
+    StruNetData netdata = { 0 };
+    ret = recv(sock, reinterpret_cast<char*>(&netdata), sizeof(netdata), 0);
     if (ret > 0)
     {
-        std::cout << buf << std::endl;
+        std::cout << "type : " << netdata.type 
+                  <<", info : "<< netdata.info << std::endl;
     }
 
     ret = closesocket(sock);
