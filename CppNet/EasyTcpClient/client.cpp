@@ -21,11 +21,22 @@ if(ret != compare)\
               << ", error " << ret;\
 }
 
-typedef struct __NETDATA
+typedef enum { UNKNOW, LOGIN, LOGINRET } ProtocolType;
+typedef struct __PROTOCOLHEADER
 {
-    int type;
-    char info[128];
-}StruNetData;
+    ProtocolType type;
+    uint32_t bodylen;
+}ProtocolHeader;
+typedef struct __LOGININFO
+{
+    char user[16];
+    char password[32];
+}LoginInfo;
+typedef struct __LOGINRESULT
+{
+    uint16_t ret;
+    char msg[32];
+}LoginResult;
 
 int main()
 {
@@ -35,7 +46,7 @@ int main()
     auto ret = WSAStartup(version, &data);
     CHECKNEQUALRET(ret, 0);
 
-    // Create a socket and listen for requests
+    // Create a socket and request
     auto sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     CHECKEQUALRET(sock, INVALID_SOCKET);
     sockaddr_in addr = { 0 };
@@ -44,13 +55,22 @@ int main()
     addr.sin_port = htons(4567);
     ret = connect(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
     CHECKEQUALRET(ret, SOCKET_ERROR);
-    StruNetData netdata = { 0 };
-    ret = recv(sock, reinterpret_cast<char*>(&netdata), sizeof(netdata), 0);
-    if (ret > 0)
-    {
-        std::cout << "type : " << netdata.type 
-                  <<", info : "<< netdata.info << std::endl;
-    }
+    
+    LoginInfo logininfo = { "gongluck", "password123" };
+    ProtocolHeader header = { LOGIN, sizeof(logininfo) };
+    ret = send(sock, reinterpret_cast<char*>(&header), sizeof(header), 0);
+    CHECKNEQUALRET(ret, sizeof(header));
+    ret = send(sock, reinterpret_cast<char*>(&logininfo), sizeof(logininfo), 0);
+    CHECKNEQUALRET(ret, sizeof(logininfo));
+    ret = recv(sock, reinterpret_cast<char*>(&header), sizeof(header), 0);
+    CHECKNEQUALRET(ret, sizeof(header));
+    std::cout << "header.type is " << header.type
+        << ", header.bodylen is " << header.bodylen << std::endl;
+    LoginResult loginresult;
+    ret = recv(sock, reinterpret_cast<char*>(&loginresult), sizeof(loginresult), 0);
+    CHECKNEQUALRET(ret, sizeof(loginresult));
+    std::cout << "loginresult.ret is " << loginresult.ret
+        << ", loginresult.msg is " << loginresult.msg << std::endl;
 
     ret = closesocket(sock);
     CHECKEQUALRET(ret, SOCKET_ERROR);
