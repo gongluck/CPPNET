@@ -25,15 +25,17 @@ typedef enum { UNKNOW, LOGIN, LOGINRET } ProtocolType;
 typedef struct __PROTOCOLHEADER
 {
     ProtocolType type;
-    uint32_t bodylen;
+    uint32_t totallen;
 }ProtocolHeader;
 typedef struct __LOGININFO
 {
+    ProtocolHeader header = { LOGIN, sizeof(__LOGININFO) };
     char user[16];
     char password[32];
 }LoginInfo;
 typedef struct __LOGINRESULT
 {
+    ProtocolHeader header = { LOGINRET, sizeof(__LOGINRESULT) };
     uint16_t ret;
     char msg[32];
 }LoginResult;
@@ -55,20 +57,20 @@ int main()
     addr.sin_port = htons(4567);
     ret = connect(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
     CHECKEQUALRET(ret, SOCKET_ERROR);
-    
-    LoginInfo logininfo = { "gongluck", "password123" };
-    ProtocolHeader header = { LOGIN, sizeof(logininfo) };
-    ret = send(sock, reinterpret_cast<char*>(&header), sizeof(header), 0);
-    CHECKNEQUALRET(ret, sizeof(header));
+
+    LoginInfo logininfo;;
+    strcpy(logininfo.user, "gongluck");
+    strcpy(logininfo.password, "password123");
     ret = send(sock, reinterpret_cast<char*>(&logininfo), sizeof(logininfo), 0);
     CHECKNEQUALRET(ret, sizeof(logininfo));
+    ProtocolHeader header;
     ret = recv(sock, reinterpret_cast<char*>(&header), sizeof(header), 0);
     CHECKNEQUALRET(ret, sizeof(header));
     std::cout << "header.type is " << header.type
-        << ", header.bodylen is " << header.bodylen << std::endl;
+        << ", header.totallen is " << header.totallen << std::endl;
     LoginResult loginresult;
-    ret = recv(sock, reinterpret_cast<char*>(&loginresult), sizeof(loginresult), 0);
-    CHECKNEQUALRET(ret, sizeof(loginresult));
+    ret = recv(sock, reinterpret_cast<char*>(&loginresult) + sizeof(ProtocolHeader), sizeof(loginresult) - sizeof(ProtocolHeader), 0);
+    CHECKNEQUALRET(ret, sizeof(loginresult) - sizeof(ProtocolHeader));
     std::cout << "loginresult.ret is " << loginresult.ret
         << ", loginresult.msg is " << loginresult.msg << std::endl;
 
