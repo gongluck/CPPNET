@@ -37,21 +37,44 @@ int main()
 	sockaddr_in clientAddr = {};
 	int nAddrLen = sizeof(clientAddr);
 	SOCKET _cSock = INVALID_SOCKET;
-	char msgBuf[] = "Hello, I'm Server.";
+
+	_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
+	if (_cSock == INVALID_SOCKET)
+	{
+		printf("接收到无效客户端SOCKET...\n");
+	}
+	printf("新客户端连接：IP=%s\n", inet_ntoa(clientAddr.sin_addr));
 	
+	char _recvBuf[128] = {};
 	while (true)
 	{
-		_cSock = accept(_sock, (sockaddr*)&clientAddr, &nAddrLen);
-		if (_cSock == INVALID_SOCKET)
+		int nLen = recv(_cSock, _recvBuf, 128, 0);
+		if (nLen <= 0)
 		{
-			printf("接收到无效客户端SOCKET...\n");
+			printf("客户端退出\n");
+			break;
 		}
-		printf("新客户端连接：IP=%s\n", inet_ntoa(clientAddr.sin_addr));
-		send(_cSock, msgBuf, strlen(msgBuf) + 1, 0);
+		printf("收到命令：%s\n", _recvBuf);
+		if (strcmp(_recvBuf, "getName") == 0)
+		{
+			char msgBuf[] = "gongluck";
+			send(_cSock, msgBuf, strlen(msgBuf) + 1, 0);
+		}
+		else if (strcmp(_recvBuf, "getAge") == 0)
+		{
+			char msgBuf[] = "10";
+			send(_cSock, msgBuf, strlen(msgBuf) + 1, 0);
+		}
+		else
+		{
+			char msgBuf[] = "???";
+			send(_cSock, msgBuf, strlen(msgBuf) + 1, 0);
+		}
 	}
 
 	closesocket(_sock);
 
 	WSACleanup();
+	getchar();
 	return 0;
 }

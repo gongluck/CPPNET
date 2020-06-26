@@ -35,11 +35,26 @@ int main()
 	{
 		printf("连接成功...\n");
 	}
-	char recvBuf[256] = {};
-	int nLen = recv(_sock, recvBuf, 256, 0);
-	if (nLen > 0)
+
+	while (true)
 	{
-		printf("接收到数据：%s\n", recvBuf);
+		char cmdBuf[128] = {};
+		scanf("%s", cmdBuf);
+		if (strcmp(cmdBuf, "exit") == 0)
+		{
+			break;
+		}
+		else
+		{
+			send(_sock, cmdBuf, strlen(cmdBuf) + 1, 0);
+		}
+
+		char recvBuf[256] = {};
+		int nLen = recv(_sock, recvBuf, 256, 0);
+		if (nLen > 0)
+		{
+			printf("接收到数据：%s\n", recvBuf);
+		}
 	}
 
 	WSACleanup();
